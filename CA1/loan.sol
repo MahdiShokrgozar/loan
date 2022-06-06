@@ -215,15 +215,22 @@ contract Loan {
     }
 
     function paybackInterest() public payable {
-        LoanRequest memory loan = getMyRequest(false);
+        uint256  loan_id = getMyRequest(false);
         require(
-            msg.value == loan.interest + loan.original_amount,
+            msg.value == loan_requests[loan_id].interest + loan_requests[loan_id].original_amount,
             "you should pay original amount of loanRequest and it's interest"
         );
-        loan.lender.transfer(loan.original_amount + loan.lender_interest);
+        loan_requests[loan_id].lender.transfer(loan_requests[loan_id].original_amount + loan_requests[loan_id].lender_interest);
+        loan_requests[loan_id].guarantor.transfer(loan_requests[loan_id].original_amount + loan_requests[loan_id].guarantor_interest   );    
+        loan_requests[loan_id].status=3;
     }
 
-    function getInterest() public payable {}
+    function getInterest(uint256 id) public payable {
+        require(loan_requests[id].lender==msg.sender);
+        require(block.timestamp-loan_requests[id].time_started>=loan_requests[id].payback_period,"");
+        loan_requests[id].lender.transfer(loan_requests[id].original_amount + loan_requests[id].lender_interest);
+        loan_requests[id].status=4;
+    }
 
     // a month is 2592000 sec
 }
